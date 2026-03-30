@@ -28,9 +28,9 @@ class BankConverter(ABC):
 
         output_rows = [self.convert_row(row) for row in rows]
 
-        with open(output_file, "w", newline="", encoding="utf-8") as outfile:
+        with open(output_file, "w", newline="\n", encoding="utf-8") as outfile:
             fieldnames = ["Bank Account", "Date", "Description", "Withdrawal", "Deposit"]
-            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+            writer = csv.DictWriter(outfile, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             writer.writerows(output_rows)
 
