@@ -28,9 +28,9 @@ class BankConverter(ABC):
 
         output_rows = [self.convert_row(row) for row in rows]
 
-        with open(output_file, "w", newline="\n", encoding="utf-8") as outfile:
-            fieldnames = ["Bank Account", "Date", "Description", "Withdrawal", "Deposit"]
-            writer = csv.DictWriter(outfile, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+        with open(output_file, "w", newline="", encoding="utf-8") as outfile:
+            fieldnames = ["Date", "Deposit", "Withdrawal", "Description", "Reference Number", "Bank Account", "Currency"]
+            writer = csv.DictWriter(outfile, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n")
             writer.writeheader()
             writer.writerows(output_rows)
 
@@ -69,11 +69,13 @@ class WiseConverter(BankConverter):
             deposit = total
 
         return {
-            "Bank Account": f"{self.bank_name} - {self.bank_name}",
             "Date": date,
-            "Description": description,
-            "Withdrawal": withdrawal,
             "Deposit": deposit,
+            "Withdrawal": withdrawal,
+            "Description": description,
+            "Reference Number": "",
+            "Bank Account": f"{self.bank_name} - {self.bank_name}",
+            "Currency": "USD",
         }
 
 
@@ -92,7 +94,39 @@ class NovoConverter(BankConverter):
     bank_name = "Novo"
 
     def convert_row(self, row: dict) -> dict:
-        raise NotImplementedError("Novo converter not yet implemented")
+        # Date: convert from MM-DD-YYYY to YYYY-MM-DD
+        month, day, year = row["Date"].split("-")
+        date = f"{year}-{month}-{day}"
+
+        # Description: combine Description and Note (max 120 chars)
+        desc_parts = []
+        for field in ["Description", "Note"]:
+            val = row.get(field, "").strip()
+            if val:
+                desc_parts.append(val)
+        description = " - ".join(desc_parts)[:120]
+
+        # Amount: parse dollar amount (remove $, commas)
+        amount_str = row["Amount"].replace("$", "").replace(",", "")
+        amount = float(amount_str)
+
+        # Negative amounts are withdrawals, positive are deposits
+        if amount < 0:
+            withdrawal = abs(amount)
+            deposit = 0
+        else:
+            withdrawal = 0
+            deposit = amount
+
+        return {
+            "Date": date,
+            "Deposit": deposit,
+            "Withdrawal": withdrawal,
+            "Description": description,
+            "Reference Number": "",
+            "Bank Account": f"{self.bank_name} - {self.bank_name}",
+            "Currency": "USD",
+        }
 
 
 CONVERTERS = {
