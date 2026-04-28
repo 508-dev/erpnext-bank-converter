@@ -85,7 +85,31 @@ class ChaseConverter(BankConverter):
     bank_name = "Chase"
 
     def convert_row(self, row: dict) -> dict:
-        raise NotImplementedError("Chase converter not yet implemented")
+        # Date: convert from MM/DD/YYYY to YYYY-MM-DD
+        month, day, year = row["Posting Date"].split("/")
+        date = f"{year}-{month}-{day}"
+
+        # Description: collapse internal whitespace, limit to 120 chars
+        description = " ".join(row["Description"].split())[:120]
+
+        # Amount: negative = withdrawal, positive = deposit
+        amount = float(row["Amount"])
+        if amount < 0:
+            withdrawal = abs(amount)
+            deposit = 0.0
+        else:
+            withdrawal = 0.0
+            deposit = amount
+
+        return {
+            "Date": date,
+            "Deposit": deposit,
+            "Withdrawal": withdrawal,
+            "Description": description,
+            "Reference Number": row.get("Check or Slip #", "").strip(),
+            "Bank Account": f"{self.bank_name} - {self.bank_name}",
+            "Currency": "USD",
+        }
 
 
 class NovoConverter(BankConverter):
@@ -148,7 +172,7 @@ def main():
         print(f"Error: Input file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    output = args.output or args.input.with_stem(args.input.stem + "_erpnext")
+    output = args.output or args.input.with_stem(args.input.stem + "_erpnext").with_suffix(".csv")
 
     converter = CONVERTERS[args.bank]()
     converter.convert(args.input, output)
