@@ -7,8 +7,8 @@ Converts bank transaction CSV exports to the format expected by the ERPNext bank
 | Bank  | Status      |
 |-------|-------------|
 | Wise  | Supported   |
-| Chase | Coming soon |
-| Novo  | Coming soon |
+| Chase | Supported |
+| Novo  | Supported |
 
 ## Installation
 
